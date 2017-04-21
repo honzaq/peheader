@@ -4,6 +4,9 @@
     <Filter Include="peheader">
       <UniqueIdentifier>{5c863297-f9cf-4021-8d44-621f939af057}</UniqueIdentifier>
     </Filter>
+    <Filter Include="measure">
+      <UniqueIdentifier>{5f657808-2049-4297-ab78-ccd0c29cbc58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -12,5 +15,10 @@
     <ClCompile Include="peheader.cpp">
       <Filter>peheader</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="time_measure.h">
+      <Filter>measure</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
