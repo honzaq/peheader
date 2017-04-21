@@ -46,7 +46,7 @@ public:
 		dDiff = double(stop_.QuadPart - start_.QuadPart);
 		dDiff /= freq_.QuadPart;
 
-		debug_format(L"Measure [%s] time = %5.5fs", measure_id_, dDiff);
+		debug_format(L"Measure [%s] time = %5.5fs\n", measure_id_, dDiff);
 
 		if (reset_measure) {
 			start_measure(measure_id);
