@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EC3BD71F-1FA7-4624-83B6-47157C23291C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>peheader</RootNamespace>
+    <RootNamespace>sfx_extra_data</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -149,7 +149,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="peheader.cpp" />
+    <ClCompile Include="sfx_extra_data.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="time_measure.h" />

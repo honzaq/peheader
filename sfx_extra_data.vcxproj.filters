@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="peheader">
+    <Filter Include="sfx_extra_data">
       <UniqueIdentifier>{5c863297-f9cf-4021-8d44-621f939af057}</UniqueIdentifier>
     </Filter>
     <Filter Include="measure">
@@ -12,8 +12,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="peheader.cpp">
-      <Filter>peheader</Filter>
+    <ClCompile Include="sfx_extra_data.cpp">
+      <Filter>sfx_extra_data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
