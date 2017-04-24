@@ -26,7 +26,7 @@
     <ClInclude Include="dbg.h">
       <Filter>Debug</Filter>
     </ClInclude>
-    <ClInclude Include="sfx_data_header.h">
+    <ClInclude Include="sfx_extra_data_header.h">
       <Filter>sfx_extra_data</Filter>
     </ClInclude>
   </ItemGroup>

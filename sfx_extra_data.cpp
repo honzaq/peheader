@@ -10,7 +10,7 @@
 #include "time_measure.h"
 #include <vector>
 #include "dbg.h"
-#include "sfx_data_header.h"
+#include "sfx_extra_data_header.h"
 
 std::wstring gen_random_str(size_t len)
 {
