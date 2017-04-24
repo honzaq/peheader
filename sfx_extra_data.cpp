@@ -9,19 +9,8 @@
 #include <string>
 #include "time_measure.h"
 #include <vector>
-
-inline void debug_format(const TCHAR* szFormat, ...)
-{
-	TCHAR szBuff[1024];
-	memset(szBuff, 0, sizeof(szBuff));
-
-	va_list arg;
-	va_start(arg, szFormat);
-	_vsntprintf_s(szBuff, sizeof(szBuff) / sizeof(TCHAR), _TRUNCATE, szFormat, arg);
-	va_end(arg);
-
-	::OutputDebugString(szBuff);
-};
+#include "dbg.h"
+#include "sfx_data_header.h"
 
 std::wstring gen_random_str(size_t len)
 {
@@ -39,155 +28,6 @@ std::wstring gen_random_str(size_t len)
 
 	return name;
 }
-
-
-class payload_header
-{
-public:
-	payload_header(const uint64_t& file_modify_time, const uint32_t& file_size, const wchar_t* name)
-	{
-		file_modify_time_ = file_modify_time;
-		file_size_ = file_size;
-		file_name_.assign(name);
-		file_name_size_ = (uint16_t)file_name_.size();
-	}
-	payload_header(const uint64_t& file_modify_time, const uint32_t& file_size, const std::wstring& name)
-	{
-		file_modify_time_ = file_modify_time;
-		file_size_ = file_size;
-		file_name_.assign(name);
-		file_name_size_ = (uint16_t)file_name_.size();
-	}
-
-	bool is_terminate_header() {
-		return file_size_ == 0 && file_name_size_ == 0 && header_size_ != 0;
-	}
-
-	uint32_t get_next_header_pointer() {
-		if (version_ == 1) {
-			assert(header_size_ != 0 && "Functino can be called only for filled data");
-			assert(file_size_ != 0 && "Functino can be called only for filled data");
-			return header_size_ + file_size_;
-
-		}
-		else {
-			assert(false && "Unsupported version");
-			throw std::exception("Unsupported version");
-		}
-		return 0;
-	}
-
-	void Serialize(HANDLE hFile)
-	{
-		if (version_ == 1)
-		{
-			DWORD writtenBytes = 0;
-
-			header_size_ = sizeof(version_) 
-				+ sizeof(header_size_) 
-				+ sizeof(file_modify_time_) 
-				+ sizeof(header_size_) 
-				+ sizeof(file_name_size_) 
-				+ sizeof(wchar_t)*file_name_size_;
-			
-			// version
-			if (!::WriteFile(hFile, &version_, sizeof(version_), &writtenBytes, NULL)) {
-				assert(false && "Could not write version to file");
-				throw std::exception("Could not write version to file");
-			}
-
-			// header_size
-			if (!::WriteFile(hFile, &header_size_, sizeof(header_size_), &writtenBytes, NULL)) {
-				assert(false && "Could not write header_size to file");
-				throw std::exception("Could not write header_size to file");
-			}
-
-			// file_modify_time
-			if (!::WriteFile(hFile, &file_modify_time_, sizeof(file_modify_time_), &writtenBytes, NULL)) {
-				assert(false && "Could not write file_modify_time size to file");
-				throw std::exception("Could not write file_modify_time to file");
-			}
-
-			// file_size
-			if (!::WriteFile(hFile, &file_size_, sizeof(file_size_), &writtenBytes, NULL)) {
-				assert(false && "Could not write version to file");
-				throw std::exception("Could not write version to file");
-			}
-
-			// name_size
-			if (!::WriteFile(hFile, &file_name_size_, sizeof(file_name_size_), &writtenBytes, NULL)) {
-				assert(false && "Could not write name_size to file");
-				throw std::exception("Could not write name_size to file");
-			}
-
-			// name
-			if (!::WriteFile(hFile, file_name_.c_str(), sizeof(wchar_t)*file_name_size_, &writtenBytes, NULL)) {
-				assert(false && "Could not write name to file");
-				throw std::exception("Could not write name to file");
-			}
-		}
-		
-		
-	}
-	void Deserialize(HANDLE hFile)
-	{
-		DWORD readedBytes = 0;
-		
-		// version
-		version_ = 0;
-		if (!::ReadFile(hFile, &version_, sizeof(version_), &readedBytes, NULL)) {
-			assert(false && "Could not read version to file");
-			throw std::exception("Could not read version to file");
-		}
-
-		if (version_ == 1) {
-
-			// header_size
-			if (!::ReadFile(hFile, &header_size_, sizeof(header_size_), &readedBytes, NULL)) {
-				assert(false && "Could not write header_size to file");
-				throw std::exception("Could not write header_size to file");
-			}
-
-			// file_modify_time
-			if (!::ReadFile(hFile, &file_modify_time_, sizeof(file_modify_time_), &readedBytes, NULL)) {
-				assert(false && "Could not write file_modify_time size to file");
-				throw std::exception("Could not write file_modify_time to file");
-			}
-
-			// file_size
-			if (!::ReadFile(hFile, &file_size_, sizeof(file_size_), &readedBytes, NULL)) {
-				assert(false && "Could not write version to file");
-				throw std::exception("Could not write version to file");
-			}
-
-			// name_size
-			if (!::ReadFile(hFile, &file_name_size_, sizeof(file_name_size_), &readedBytes, NULL)) {
-				assert(false && "Could not write name_size to file");
-				throw std::exception("Could not write name_size to file");
-			}
-
-			// name
-			file_name_.resize(file_name_size_ + 1, L'\0');
-			if (!::ReadFile(hFile, &file_name_[0], sizeof(wchar_t)*file_name_size_, &readedBytes, NULL)) {
-				assert(false && "Could not write name to file");
-				throw std::exception("Could not write name to file");
-			}
-		}
-		else
-		{
-			assert(false && "Unsupported payload header version");
-			throw std::exception("Unsupported payload header version");
-		}
-	}
-
-protected:
-	uint8_t      version_          = 1; // Header version
-	uint32_t     header_size_      = 0; // Header size (with all variable fields (after header file_data follow)
-	uint64_t     file_modify_time_ = 0; // File modify time
-	uint32_t     file_size_        = 0; // File data size (data follow after header)
-	uint16_t     file_name_size_   = 0; // File name size
-	std::wstring file_name_;            // File name (variable length)
-};
 
 void read_data(const wchar_t* fileName)
 {
@@ -250,7 +90,7 @@ void read_data(const wchar_t* fileName)
 		// Test that data exist
 		if (fileSize == exeSize) {
 			// NO DATA
-			debug_format(L"No extra data after EXE file.\n");
+			dbg::print(L"No extra data after EXE file.\n");
 		}
 
 		if (exeSize > fileSize) {
@@ -258,18 +98,14 @@ void read_data(const wchar_t* fileName)
 			break;
 		}
 
-		debug_format(L"EXE size(the END)=%u\n", exeSize);
-
-		// TODO: if sign already attached we must remove it, currently expect file is not signed
+		dbg::print(L"EXE size(the END)=%u\n", exeSize);
 
 		if(::SetFilePointer(hFile, exeSize, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
 			assert(false && "Could not set pointer to end of file");
 			break;
 		}
 
-		// TODO
-
-		std::vector<payload_header> headers;
+		std::vector<sfx_data_header> headers;
 		DWORD newFilePos = exeSize;
 		measure::time read_headers(L"read_headers");
 
@@ -277,8 +113,8 @@ void read_data(const wchar_t* fileName)
 		{
 			do {
 			
-				payload_header header(0, 0, L"");
-				header.Deserialize(hFile);
+				sfx_data_header header(0, 0, L"");
+				header.deserialize(hFile);
 
 				if (header.is_terminate_header()) {
 					// END EXTRA DATA
@@ -292,7 +128,7 @@ void read_data(const wchar_t* fileName)
 				//////////////////////////////////////////////////////////////////////////
 
 				// Move to next header
-				newFilePos += header.get_next_header_pointer();
+				newFilePos += header.size_of_current();
 				if (::SetFilePointer(hFile, newFilePos, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
 					assert(false && "Could not set pointer to end of file");
 					break;
@@ -302,8 +138,11 @@ void read_data(const wchar_t* fileName)
 		}
 		catch (const std::exception&)
 		{
+			dbg::print(L"Read sfx extra files end with exception\n");
 			break;
 		}
+
+		dbg::print(L"Read headers count=%u\n", (DWORD)headers.size());
 
 		read_headers.end_measure();
 
@@ -327,11 +166,6 @@ void write_data_to_file(HANDLE hFile, const uint32_t& file_size)
 	memset(pData, 0xBB, sizeof(BYTE)*file_size);
 
 	// Write Data
-	if(::SetFilePointer(hFile, 0, NULL, FILE_END) == INVALID_SET_FILE_POINTER) {
-		assert(false && "Could not set pointer to end of file");
-		delete pData;
-		throw std::exception("Could not set pointer to end of file");
-	}
 	DWORD writtenBytes = 0;
 	if (!::WriteFile(hFile, pData, file_size, &writtenBytes, NULL)) {
 		assert(false && "Could not write data to file");
@@ -344,19 +178,74 @@ void write_data_to_file(HANDLE hFile, const uint32_t& file_size)
 void write_data(const wchar_t* fileName)
 {
 	HANDLE hFile = nullptr;
+	HANDLE hFileMapping = nullptr;
+	LPVOID lpBaseAddress = nullptr;
+	bool set_new_end_of_file = false;
 	do
 	{
-
 		//////////////////////////////////////////////////////////////////////////
 		// Open file 
-		hFile = ::CreateFile(fileName, FILE_APPEND_DATA, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (hFile == INVALID_HANDLE_VALUE) {
+		hFile = ::CreateFile(fileName, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if(hFile == INVALID_HANDLE_VALUE) {
 			assert(false && "Could not open file");
 			break;
 		}
+		DWORD fileSize = ::GetFileSize(hFile, NULL);
 
-		if (::SetFilePointer(hFile, 0, NULL, FILE_END) == INVALID_SET_FILE_POINTER) {
-			assert(false && "Could not set pointer to end of file");
+		// Mapping Given EXE file to Memory
+		hFileMapping = ::CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+		if(hFileMapping == NULL) {
+			assert(false && "Could not map file exe");
+			break;
+		}
+
+		lpBaseAddress = ::MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+		if(lpBaseAddress == NULL) {
+			assert(false && "Map view of file fail");
+			break;
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+
+		// We want file end of exe file by same method as read, 
+		//  because after normal end may be signature and by this we will overwrite it
+		//  also if we write all data we will call ::SetEndOfFile, to set new file end 
+		//   (because may write less the signature size)
+
+		PIMAGE_DOS_HEADER pDOSHeader = static_cast<PIMAGE_DOS_HEADER>(lpBaseAddress);
+		if(pDOSHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+			assert(false && "Not PE file");
+			break;
+		}
+		PIMAGE_NT_HEADERS pNTHeader = reinterpret_cast<PIMAGE_NT_HEADERS>((PBYTE)lpBaseAddress + pDOSHeader->e_lfanew);
+		if(pNTHeader->Signature != IMAGE_NT_SIGNATURE) {
+			assert(false && "Not NT PE file");
+			break;
+		}
+		PIMAGE_OPTIONAL_HEADER pOptionalHeader = reinterpret_cast<PIMAGE_OPTIONAL_HEADER>((PBYTE)&pNTHeader->OptionalHeader);
+		if(IMAGE_NT_OPTIONAL_HDR32_MAGIC != pNTHeader->OptionalHeader.Magic) {
+			assert(false && "File is not 32b");
+			break;
+		}
+		PIMAGE_SECTION_HEADER pSECTIONHeader = reinterpret_cast<PIMAGE_SECTION_HEADER>((PBYTE)pNTHeader + sizeof(IMAGE_NT_HEADERS));
+
+		DWORD exeSize = 0;
+		DWORD maxpointer = 0;
+		for(WORD i = 0; i < pNTHeader->FileHeader.NumberOfSections; ++i) {
+			if(pSECTIONHeader->PointerToRawData > maxpointer) {
+				maxpointer = pSECTIONHeader->PointerToRawData;
+				exeSize = pSECTIONHeader->PointerToRawData + pSECTIONHeader->SizeOfRawData;
+			}
+			pSECTIONHeader++;
+		}
+
+		// Test that data exist
+		if(fileSize == exeSize) {
+			dbg::print(L"No extra data after EXE file.\n");
+		}
+
+		if (::SetFilePointer(hFile, exeSize, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+			assert(false && "Could not set pointer to 'end' of file");
 			break;
 		}
 
@@ -370,12 +259,13 @@ void write_data(const wchar_t* fileName)
 
 			try
 			{
-				payload_header header(modify_time, file_size, name);
-				header.Serialize(hFile);
+				sfx_data_header header(modify_time, file_size, name);
+				header.serialize(hFile);
 				write_data_to_file(hFile, file_size);
 			}
 			catch (const std::exception&)
 			{
+				dbg::print(L"Exception in write\n");
 				break;
 			}
 		}
@@ -383,16 +273,30 @@ void write_data(const wchar_t* fileName)
 		// Write terminate header
 		try
 		{
-			payload_header header(0, 0, L"");
-			header.Serialize(hFile);
+			sfx_data_header header(0, 0, L"");
+			header.serialize(hFile);
 		}
 		catch (const std::exception&)
 		{
+			dbg::print(L"Exception in write terminate header\n");
 			break;
 		}
 
+		// If all succeed we want set new end of file (for some cases not needed, but its simplier this way)
+		set_new_end_of_file = true;
+
 	} while (false);
 
+	if(lpBaseAddress != NULL) {
+		::UnmapViewOfFile(lpBaseAddress);
+	}
+	if(hFileMapping != NULL) {
+		::CloseHandle(hFileMapping);
+	}
+	if(set_new_end_of_file) {
+		// UnmapViewOfFile and CloseHandle on mapped file must be called first
+		::SetEndOfFile(hFile);
+	}
 	if (hFile != INVALID_HANDLE_VALUE) {
 		::CloseHandle(hFile);
 	}
@@ -405,12 +309,15 @@ int _tmain(int argc, const _TCHAR* argv[])
 		return -1;
 	}
 
+	// init random generator
 	srand((unsigned int)time(NULL));
 
 	if (wcscmp(argv[1], L"-w") == 0) {
+		// Write after EXE
 		write_data(argv[2]);
 	}
 	else if (wcscmp(argv[1], L"-r") == 0) {
+		// Read file structure after EXE
 		read_data(argv[2]);
 	}
 	

@@ -152,6 +152,8 @@
     <ClCompile Include="sfx_extra_data.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dbg.h" />
+    <ClInclude Include="sfx_data_header.h" />
     <ClInclude Include="time_measure.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

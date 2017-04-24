@@ -7,6 +7,9 @@
     <Filter Include="measure">
       <UniqueIdentifier>{5f657808-2049-4297-ab78-ccd0c29cbc58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Debug">
+      <UniqueIdentifier>{f2d1110a-e4d9-4646-86b3-eef4c7ed72b0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -19,6 +22,12 @@
   <ItemGroup>
     <ClInclude Include="time_measure.h">
       <Filter>measure</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg.h">
+      <Filter>Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="sfx_data_header.h">
+      <Filter>sfx_extra_data</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <tchar.h>
+#include "dbg.h"
 
 namespace measure
 {
@@ -25,7 +26,7 @@ public:
 
 	~time()
 	{
-		if (measuring_) {
+		if(measuring_) {
 			end_measure();
 		}
 	}
@@ -46,26 +47,12 @@ public:
 		dDiff = double(stop_.QuadPart - start_.QuadPart);
 		dDiff /= freq_.QuadPart;
 
-		debug_format(L"Measure [%s] time = %5.5fs\n", measure_id_, dDiff);
+		dbg::print(L"Measure [%s] time = %5.5fs\n", measure_id_, dDiff);
 
 		if (reset_measure) {
 			start_measure(measure_id);
 		}
 	}
-
-protected:
-	inline void debug_format(const wchar_t* szFormat, ...)
-	{
-		wchar_t szBuff[1024];
-		memset(szBuff, 0, sizeof(szBuff));
-
-		va_list arg;
-		va_start(arg, szFormat);
-		_vsntprintf_s(szBuff, sizeof(szBuff) / sizeof(wchar_t), _TRUNCATE, szFormat, arg);
-		va_end(arg);
-
-		::OutputDebugString(szBuff);
-	};
 
 private:
 	bool measuring_ = false;
