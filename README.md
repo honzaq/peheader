@@ -2,7 +2,7 @@
 
 Write and Read extra data after EXE file.
 
-Code for Windows + VS2015
+Code for Windows + VS2015 + for 32b files only
 
 Command line:
 * -w <file_path> will open existing EXE and write at the end 5000 file with random names and size
