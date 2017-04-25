@@ -149,7 +149,9 @@
     <ClCompile Include="sfx_extra_data.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cmdp.h" />
     <ClInclude Include="dbg.h" />
+    <ClInclude Include="scope_guard.h" />
     <ClInclude Include="sfx_extra_data_header.h" />
     <ClInclude Include="time_measure.h" />
   </ItemGroup>

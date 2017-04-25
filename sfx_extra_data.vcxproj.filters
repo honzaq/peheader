@@ -10,6 +10,12 @@
     <Filter Include="Debug">
       <UniqueIdentifier>{f2d1110a-e4d9-4646-86b3-eef4c7ed72b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cmdp">
+      <UniqueIdentifier>{cd0cd98d-1e16-49f7-8c7f-8320ffcc0269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scope_guard">
+      <UniqueIdentifier>{50a4367f-c7af-4b71-90d2-3872d537b809}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sfx_extra_data.cpp">
@@ -25,6 +31,12 @@
     </ClInclude>
     <ClInclude Include="sfx_extra_data_header.h">
       <Filter>sfx_extra_data</Filter>
+    </ClInclude>
+    <ClInclude Include="cmdp.h">
+      <Filter>cmdp</Filter>
+    </ClInclude>
+    <ClInclude Include="scope_guard.h">
+      <Filter>scope_guard</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

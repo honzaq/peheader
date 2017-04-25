@@ -10,7 +10,9 @@
 #include "time_measure.h"
 #include <vector>
 #include "dbg.h"
+#include "cmdp.h"
 #include "sfx_extra_data_header.h"
+#include "scope_guard.h"
 
 std::wstring gen_random_str(size_t len)
 {
@@ -175,14 +177,107 @@ void write_data_to_file(HANDLE hFile, const uint32_t& file_size)
 	delete pData;
 }
 
-void write_data(const wchar_t* fileName)
+std::vector<std::wstring> split(const wchar_t* str, wchar_t splitter = L';')
+{
+	std::vector<std::wstring> result;
+
+	do
+	{
+		const wchar_t* begin = str;
+
+		while (*str != splitter && *str) {
+			str++;
+		}
+
+		result.push_back(std::wstring(begin, str));
+	} while (0 != *str++);
+
+	return result;
+}
+
+void add_random_file(HANDLE hFile)
+{
+	// Generate secret number between 1 and 30
+	int fileNameLen = rand() % 30 + 1;
+	std::wstring name = gen_random_str(fileNameLen);
+	uint32_t file_size = rand() % 100000 + 1;
+	uint64_t modify_time = time(NULL);
+
+	sfx_data_header header(modify_time, file_size, name);
+	header.serialize(hFile);
+	write_data_to_file(hFile, file_size);
+}
+
+void add_file(HANDLE hFile, const std::wstring& name)
+{
+	HANDLE hReadFile = ::CreateFile(name.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		assert(false && "Could not open file");
+		throw std::exception("Could not open file");
+	}
+
+	scope_guard file_guard = [&]() {
+		if (hReadFile != INVALID_HANDLE_VALUE) {
+			::CloseHandle(hReadFile);
+		}
+	};
+
+	// Get file last modify time
+	FILETIME creationTime, lastAccessTime, lastWriteTime;
+	if (!::GetFileTime(hReadFile, &creationTime, &lastAccessTime, &lastWriteTime)) {
+		assert(false && "Could not read file size");
+		throw std::exception("Could not read file size");
+	}
+
+	uint64_t modify_time = (static_cast<uint64_t>(lastWriteTime.dwHighDateTime) << 32) | lastWriteTime.dwLowDateTime;
+	uint32_t file_size = ::GetFileSize(hReadFile, NULL);
+
+	// Write header
+	sfx_data_header header(modify_time, file_size, name);
+	header.serialize(hFile);
+
+	// Copy file
+	static BYTE copy_buffer[4096];
+
+	DWORD dwBytesRead = 0;
+	DWORD dwBytesWritten = 0;
+	do
+	{
+		if (!::ReadFile(hReadFile, copy_buffer, sizeof(copy_buffer), &dwBytesRead, NULL)) {
+			assert(false && "Could not read data from file");
+			throw std::exception("Could not read data from file");
+		}
+		if (dwBytesRead == 0) {
+			break; // End of file
+		}
+		if (!::WriteFile(hFile, copy_buffer, dwBytesRead, &dwBytesWritten, NULL)) {
+			assert(false && "Could not write data to file");
+			throw std::exception("Could not write data to file");
+		}
+	} while(true);
+}
+
+void write_data(const wchar_t* fileName, const wchar_t* list_of_files)
 {
 	HANDLE hFile = nullptr;
 	HANDLE hFileMapping = nullptr;
 	LPVOID lpBaseAddress = nullptr;
 	bool set_new_end_of_file = false;
+
 	do
 	{
+		bool random_files = true;
+
+		//////////////////////////////////////////////////////////////////////////
+		// Parse list_of_files
+		std::vector<std::wstring> files_to_add;
+		if (list_of_files != nullptr) {
+			files_to_add = split(list_of_files);
+			if (files_to_add.size() > 0) {
+				random_files = false;
+			}
+		}
+
 		//////////////////////////////////////////////////////////////////////////
 		// Open file 
 		hFile = ::CreateFile(fileName, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -249,19 +344,18 @@ void write_data(const wchar_t* fileName)
 			break;
 		}
 
-		for (int testFiles = 0; testFiles < 5000; ++testFiles) {
+		size_t files_count = random_files ? 5000 : files_to_add.size();
 
-			// Generate secret number between 1 and 30
- 			int fileNameLen = rand() % 30 + 1;
-			std::wstring name = gen_random_str(fileNameLen);
-			uint32_t file_size = rand() % 100000 + 1;
-			uint64_t modify_time = time(NULL);
+		for(auto testFiles = 0U; testFiles < files_count; ++testFiles) {
 
 			try
 			{
-				sfx_data_header header(modify_time, file_size, name);
-				header.serialize(hFile);
-				write_data_to_file(hFile, file_size);
+				if (random_files) {
+					add_random_file(hFile);
+				}
+				else {
+					add_file(hFile, files_to_add[testFiles]);
+				}
 			}
 			catch (const std::exception&)
 			{
@@ -304,23 +398,21 @@ void write_data(const wchar_t* fileName)
 
 int _tmain(int argc, const _TCHAR* argv[])
 {
-	if(argc < 3) {
-		assert(false && "Missing file path argument");
-		return -1;
-	}
-
 	// init random generator
 	srand((unsigned int)time(NULL));
 
-	if (wcscmp(argv[1], L"-w") == 0) {
-		// Write after EXE
-		write_data(argv[2]);
-	}
-	else if (wcscmp(argv[1], L"-r") == 0) {
-		// Read file structure after EXE
-		read_data(argv[2]);
-	}
+	cmdp::parser cmdp(argc, argv);
 	
+	if (cmdp[L"w"]) { // Write after EXE
+		// Parameter of --w parameter should be path to EXE file.
+		//  second param is files="<path>;<path2>...."
+		write_data(cmdp(L"w").str().c_str(), cmdp[L"files"] ? cmdp(L"files").str().c_str() : nullptr);
+	}
+	else if (cmdp[L"r"]) { // Read file structure after EXE
+		
+		// Parameter of --r parameter should be path to EXE file
+		read_data(cmdp(L"r").str().c_str());
+	}
 
     return 0;
 }
