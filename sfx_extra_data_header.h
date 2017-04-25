@@ -141,6 +141,18 @@ public:
 		}
 	}
 
+	uint64_t file_modify_time() const {
+		return file_modify_time_;
+	}
+
+	uint32_t file_size() const {
+		return file_size_;
+	}
+
+	std::wstring file_name() const {
+		return file_name_;
+	}
+
 protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Data for header serialize
