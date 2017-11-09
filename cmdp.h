@@ -68,7 +68,7 @@ parser::parser(int argc, const wchar_t* const argv[], parse_mode mode /*= PREFER
 	parse(argc, argv, mode);
 }
 
-void parser::parse(int argc, const wchar_t* const argv[], parse_mode mode /*= PREFER_FLAG_FOR_UNREG_OPTION*/)
+void parser::parse(int argc, const wchar_t* const argv[], parse_mode /*mode = PREFER_FLAG_FOR_UNREG_OPTION*/)
 {
 /*
  * -flag
@@ -184,7 +184,7 @@ void parser::parse_one_param(const wchar_t* const param, std::wstring& prev_para
 			}
 			break;
 		case flag_read:
-			if ((param[i] >= 'a' && param[i] <= 'z') || (param[i] >= '0' && param[i] <= '9') || (param[i] >= 'A' && param[i] <= 'Z')) {
+			if ((param[i] >= 'a' && param[i] <= 'z') || (param[i] >= '0' && param[i] <= '9') || (param[i] >= 'A' && param[i] <= 'Z') || param[i] == '-' || param[i] == '_') {
 				param_name += param[i];
 				continue;
 			}
